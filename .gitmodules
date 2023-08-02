@@ -1,0 +1,3 @@
+[submodule "lifting-benchmarks"]
+	path = lifting-benchmarks
+	url = https://github.com/JWesleySM/lifting-benchmarks
