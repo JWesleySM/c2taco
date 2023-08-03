@@ -36,8 +36,7 @@ def create_io_file(benchmark_path):
   except FileNotFoundError as e:
     print('Could not open temporary io file')
     raise e
-    
-              
+      
   with open(os.path.join(benchmark_dir, f'{benchmark}_io.json'), 'w') as io_json_file:
       json.dump(io_pairs, io_json_file, indent = 2)
 
