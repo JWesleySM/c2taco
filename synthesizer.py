@@ -143,7 +143,7 @@ def ETS(size):
     
     return candidates
 
-  sub_candidates = enumerate(size - 1)
+  sub_candidates = ETS(size - 1)
   for c in sub_candidates:
     # E -> E binop E
     for op in BINOPS:
