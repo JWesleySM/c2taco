@@ -19,7 +19,7 @@ def enumerative_smart_synthesis():
   assert len(args.orders) == args.length + 1, 'Provide one order for each tensor on the expected solution'
   print('Orders: ')
   for i in range(args.length):
-    print(f'  Tensor {i}: {args.orders[i]}')
+    print(f'  Tensor {i + 1}: {args.orders[i]}')
   
   binops = [binop.replace("\'", '') for binop in args.binops] if args.binops else []
   print('Binary operators: ', binops, '\n', 7 * '-')
