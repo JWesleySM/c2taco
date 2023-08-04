@@ -63,10 +63,10 @@ def run_benchmark(benchmark_path, n_inputs):
 
 def io_gen():
   parser = argparse.ArgumentParser()
-  parser.add_argument('-b', '--benchmark', type = str, help = 'Path to the program to be lifted')
-  parser.add_argument('-vp', '--valueprofile', type = str, help = 'Path to value profile file')
+  parser.add_argument('-b', '--benchmark', type = str, required = True, help = 'Path to the program to be lifted')
+  parser.add_argument('-vp', '--valueprofile', type = str, required = True, help = 'Path to value profile file')
+  parser.add_argument('-n', '--ninputs', type = int, required = True, help = 'Number of IO samples to be generated')
   parser.add_argument('-ov', '--outvar', type = str, required = False, help = 'Variable that corresponds to the output. It does not need to be given in case the function is returning the output')
-  parser.add_argument('-n', '--ninputs', type = int, help = 'Number of IO samples to be generated')
   args = parser.parse_args()
   assert os.path.isfile(args.benchmark), f'Could not find {args.benchmark}'
   assert os.path.isfile(args.valueprofile), f'Could not find {args.valueprofile}'
