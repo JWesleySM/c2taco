@@ -144,14 +144,49 @@ private:
 
   }
 
+  bool multiplicationInDefinition(clang::Stmt* S){
+    if(clang::BinaryOperator* OP = clang::dyn_cast<clang::BinaryOperator>(S)){
+      if(OP->isMultiplicativeOp())
+        return true;
+    }
+    if(clang::ArraySubscriptExpr* ASE = clang::dyn_cast<clang::ArraySubscriptExpr>(S)){
+      S = ASE->getBase();
+    }
+
+    if(clang::DeclRefExpr* DRE = clang::dyn_cast<clang::DeclRefExpr>(S)){
+      clang::VarDecl* Decl = getVariableDeclaration(getVariableReference(DRE));
+      if(Decl->isLocalVarDecl()){
+        for(const auto& [Var, Def] : Visitor_->Definitions_){
+          clang::VarDecl* AssignedVar = getVariableDeclaration(getVariableReference(Def->getLHS()));
+          if(AssignedVar == Decl){
+             return multiplicationInDefinition(Def->getRHS());
+          }
+        }
+      }
+    }
+    
+    for(auto& Child : S->children())
+      return multiplicationInDefinition(Child);
+
+    return false;
+
+  }
+
   bool mayBeMM(clang::BinaryOperator* Definition){
-    // We heuristically assume that when an array is indexed with a linear expression
-    // that corresponds to a matrix multiplication kernel, so we do not add one
-    // to the length of the TACO program even though this is an compound assignment
+    // We heuristically assume that when the output array is indexed with a linear expression
+    // that corresponds to a matrix multiplication kernel, so we do not add the  order of the 
+    // output array again on the orders vector even though this is an compound assignment
     if(clang::ArraySubscriptExpr* ASE = clang::dyn_cast<clang::ArraySubscriptExpr>(Definition->getLHS())){
       clang::Expr* RHS = ASE->getIdx();
-      if(clang::isa<clang::BinaryOperator>(*(RHS->child_begin())))
-        return true;
+      if(clang::isa<clang::BinaryOperator>(*(RHS->child_begin()))){
+        return multiplicationInDefinition(Definition->getRHS());
+      }
+    }
+    else if(clang::UnaryOperator* UO = clang::dyn_cast<clang::UnaryOperator>(Definition->getLHS())){
+      if(UO->getOpcode() == clang::UnaryOperator::Opcode::UO_Deref){
+        // Array manipulation through pointers 
+        return multiplicationInDefinition(UO);
+      }
     }
     return false;
   }
