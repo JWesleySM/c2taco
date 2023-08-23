@@ -37,7 +37,7 @@ endif()
 #===============================================================================
 # 3. ADD THE TARGET
 #===============================================================================
-add_library(OperatorAnalysis SHARED operators_analysis.cpp)
+add_library(OperatorAnalysis SHARED operator_analysis.cpp ../code_analysis.cpp)
 
 # Allow undefined symbols in shared objects on Darwin (this is the default
 # behaviour on Linux)
