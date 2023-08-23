@@ -11,10 +11,10 @@
 //
 // USAGE:
 //   clang -cc1 -load $BUILD_DIR/libOperatorAnalysis.so '\'
-//    -plugin program-length program.c
+//    -plugin operator-analysis program.c
 // OR:
 //   clang -c -Xclang -load -Xclang $BUILD_DIR/libOperatorAnalysis.so  '\'
-//    -Xclang -plugin -Xclang program-length program.c
+//    -Xclang -plugin -Xclang operator-analysis program.c
 //
 // Where $BUILD_DIR points to the directory where you built this library
 //
@@ -72,8 +72,6 @@ public:
     if(!VD->hasInit())
       return true;
 
-    
-    ////llvm::outs() << "Initialization of variable " << Rewriter_.getRewrittenText(VD->getSourceRange()) << " :: " << Rewriter_.getRewrittenText(VD->getInit()->getSourceRange()) << "\n";
     clang::DeclRefExpr* VarReference = clang::DeclRefExpr::CreateEmpty(VD->getASTContext(), false, true, false, 0);
     VarReference->setType(VD->getType());
     VarReference->setDecl(VD);
@@ -81,7 +79,6 @@ public:
     VarInit->setLHS(VarReference);
     VarInit->setRHS(VD->getInit());
     VarInit->setOpcode(clang::BinaryOperator::Opcode::BO_Assign);
-    //Definitions_.push_back(VarInit);
     Definitions_[VD] = VarInit;
     return true;  
   }
@@ -174,8 +171,8 @@ private:
 
   bool mayBeMM(clang::BinaryOperator* Definition){
     // We heuristically assume that when the output array is indexed with a linear expression
-    // that corresponds to a matrix multiplication kernel, so we do not add the  order of the 
-    // output array again on the orders vector even though this is an compound assignment
+    // that corresponds to a matrix multiplication kernel, so we do not add the opcode
+    // of this definition even though this is an compound assignment
     if(clang::ArraySubscriptExpr* ASE = clang::dyn_cast<clang::ArraySubscriptExpr>(Definition->getLHS())){
       clang::Expr* RHS = ASE->getIdx();
       if(clang::isa<clang::BinaryOperator>(*(RHS->child_begin()))){
@@ -214,15 +211,15 @@ private:
   }
 
 
-  void getOperatorsInDefinition(clang::Stmt* S, std::vector<clang::Stmt*>* Operators){
+  void getOperatorsInDefinition(clang::Stmt* S, std::set<clang::Stmt*>* Operators){
     if(clang::isa<clang::BinaryOperator>(S)){
-        Operators->push_back(S);
+        Operators->insert(S);
     }
 
     if(clang::UnaryOperator* UO = clang::dyn_cast<clang::UnaryOperator>(S)){
       // Unary minus 
       if(UO->getOpcode() == clang::UnaryOperator::Opcode::UO_Minus){
-        Operators->push_back(UO);
+        Operators->insert(UO);
         return;
       }
     }
@@ -255,7 +252,7 @@ private:
       
   }
 
-  void getOperatorsInLocalVarDefinition(clang::VarDecl* LocalVar, std::vector<clang::Stmt*>*Operators){
+  void getOperatorsInLocalVarDefinition(clang::VarDecl* LocalVar, std::set<clang::Stmt*>*Operators){
     for(const auto& [Var, Def] : Visitor_->Definitions_){
       clang::VarDecl* AssignedVar = getVariableDeclaration(getVariableReference(Def->getLHS()));
       if(AssignedVar == LocalVar){
@@ -272,8 +269,8 @@ public:
          :Visitor_(new OperatorAnalysisVisitor(&CI->getASTContext())){}
 
 
-  std::vector<std::string> AnalyseDefinitions(){
-    std::vector<std::string> Operators;
+  std::set<std::string> AnalyseDefinitions(){
+    std::set<std::string> Operators;
     for(const auto& [Var, Def] : Visitor_->Definitions_){
       //llvm::outs() << "Defintion: " << Visitor_->Rewriter_.getRewrittenText(Def->getSourceRange()) << "\n";
       clang::DeclRefExpr* Definition = getVariableReference(Def->getLHS());
@@ -284,12 +281,11 @@ public:
       // We found an assignment to the output variable
       if(isParameter(Var) || isReturn(Var) || mayBeOutputAlias(Var, Def)){
         //llvm::outs() << "We need to analyze this\n";
-        std::vector<clang::Stmt*>OperatorsInDef;
+        std::set<clang::Stmt*>OperatorsInDef;
         getOperatorsInDefinition(Def->getRHS(), &OperatorsInDef);
         for(auto& Op : OperatorsInDef){
           if(clang::BinaryOperator* BO = clang::dyn_cast<clang::BinaryOperator>(Op)){
-            //llvm::outs() << "Binop: " << BO->getOpcodeStr() << "\n";
-            Operators.push_back(getOperatorOpcode(BO));
+            Operators.insert(getOperatorOpcode(BO));
           }
         }
 
@@ -298,12 +294,11 @@ public:
         getVariablesInDefinition(Def->getRHS(), &Vars);
         for(auto& V : Vars){
           if(V->isLocalVarDecl()){
-            std::vector<clang::Stmt*>OperatorsInLocalVarDef;
+            std::set<clang::Stmt*>OperatorsInLocalVarDef;
             getOperatorsInLocalVarDefinition(V, &OperatorsInLocalVarDef);
             for(auto& Op : OperatorsInLocalVarDef){
               if(clang::BinaryOperator* BO = clang::dyn_cast<clang::BinaryOperator>(Op)){
-                //llvm::outs() << "Binop (in local): " << BO->getOpcodeStr() << "\n";
-                Operators.push_back(getOperatorOpcode(BO));
+                Operators.insert(getOperatorOpcode(BO));
               }
             }
           }
@@ -317,17 +312,13 @@ public:
             continue;
 
           std::string CompoundOp = getOperatorOpcode(Def);
-          if(Operators.empty())
-            Operators.push_back(CompoundOp);
-          else
-            Operators.insert(Operators.begin() + 1, CompoundOp);
+          Operators.insert(CompoundOp);
         }
       }
       else{
         //llvm::outs() << "We should not analyze this\n";
       }
     }
-    ////llvm::outs() << "Length of TACO program: " << OperatorAnalysis << "\n";
     return Operators;
   } 
 

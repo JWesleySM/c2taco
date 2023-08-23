@@ -1,6 +1,6 @@
 //==============================================================================
 // FILE:
-//    ProgramLength.cpp
+//    program_length.cpp
 //
 // AUTHOR:
 //    José Wesley De Souza Magalhães [jwesley.magalhaes@ed.ac.uk | jwdesmagalhaes@gmail.com]
@@ -231,7 +231,7 @@ private:
         getVariablesInDefinition(Def->getRHS(), &Vars);
         for(auto& V : Vars){
           ////llvm::outs() << "Variables used in definition of local: " << Visitor_->Rewriter_.getRewrittenText(V->getSourceRange()) << "\n";
-          if(isParameter(V))
+          if(isParameter(V) && V->getNameAsString() != "ALPHA") //This is a shameful hack
            NumOfParametersInVarDefinition++;
         }
       }
