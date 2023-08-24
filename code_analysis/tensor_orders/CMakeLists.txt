@@ -37,7 +37,7 @@ endif()
 #===============================================================================
 # 3. ADD THE TARGET
 #===============================================================================
-add_library(TensorOrders SHARED tensor_orders.cpp)
+add_library(TensorOrders SHARED tensor_orders.cpp ../code_analysis.cpp)
 
 # Allow undefined symbols in shared objects on Darwin (this is the default
 # behaviour on Linux)
