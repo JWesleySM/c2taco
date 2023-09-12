@@ -76,12 +76,12 @@ def is_io_compatible(c, io):
   return True
 
 
-def is_valid_binding(binding, inputs, candidate):
+def is_valid_substitution(substitution, inputs, candidate):
   """This function checks if a substitution is valid, i.e., if the 
   mappings input variable -> tensor are type-valid.
   """
   bond = dict()
-  for input_var, tensor in binding:
+  for input_var, tensor in substitution:
     # Constant tensors can only be bond to constant values.
     if tensor.startswith('Cons'):
       if not input_var.startswith('Cons'):
@@ -102,7 +102,7 @@ def is_valid_binding(binding, inputs, candidate):
   return True
 
 
-def get_bindings_permutation(candidate, io_sample):
+def get_substitutions_permutation(candidate, io_sample):
   """Return all the possible substitutions for a candidate program
   given an IO sample.
   """
@@ -113,17 +113,17 @@ def get_bindings_permutation(candidate, io_sample):
   input_list = dict(**io_sample.input,  **io_sample.constants) if candidate.has_constant() else io_sample.input
   for p in itertools.permutations(input_list.keys(), len(tensors)):
     input_combs = list(zip(p, tensors))
-    if is_valid_binding(input_combs, input_list, candidate):      
+    if is_valid_substitution(input_combs, input_list, candidate):      
       taco_input_perm.append(input_combs)
 
   return taco_input_perm 
 
 
-def build_env(lhs, lhs_order, binding, io):
+def build_env(lhs, lhs_order, substitution, io):
   """Builds an enviroment for free variables to create a PyTaco program."""
   env = dict()
   env[lhs] = (1, [0]) if lhs_order == 0 else (io.output.dimension, [0] * io.output.dimension)
-  for input_var, tensor in binding:
+  for input_var, tensor in substitution:
     if tensor.startswith('Cons'):
       env[tensor] = (1, io.constants[input_var])
     else:
@@ -203,16 +203,16 @@ def write_pytaco_program(candidate, env):
   return pytaco_program
   
 
-def check_as_pytaco(candidate, io, binding):
+def check_as_pytaco(candidate, io, substitution):
   """Check if a candidate is the correct solution by implementing and 
   interpreting a PyTaco program given a substituion.
   """
   try:
-    env = build_env(candidate.get_lhs(), candidate.get_order(candidate.get_lhs()), binding, io)
+    env = build_env(candidate.get_lhs(), candidate.get_order(candidate.get_lhs()), substitution, io)
     pytaco_program = write_pytaco_program(candidate, env)
 
   except InsufficientElements as ie:
-    raise RuntimeError('Invalid binding' + ': ' + str(ie))
+    raise RuntimeError('Invalid substitution' + ': ' + str(ie))
 
   # Get output from Python dynamically executed code
   # https://stackoverflow.com/a/3906390
@@ -224,13 +224,13 @@ def check_as_pytaco(candidate, io, binding):
   return taco_output 
 
 
-def check_binding(binding, c, io_set, debug = False):
+def check_substitution(substitution, c, io_set, debug = False):
   """Check if a candidate is the solution using a specific substution."""
   if debug:
-    print(f'Checking binding: {binding}')
+    print(f'Checking substitution: {substitution}')
   try:
     # We first check agains the first sample in the IO set
-    taco_output = check_as_pytaco(c, io_set[0], binding)
+    taco_output = check_as_pytaco(c, io_set[0], substitution)
     if debug:
       print(f'TACO output: {taco_output[:10]}')
       print(f'Expected output: {io_set[0].output[1][:10]}')
@@ -238,7 +238,7 @@ def check_binding(binding, c, io_set, debug = False):
       # A candidate is correct if it returns the correct output for all
       # the elements in the IO set.
       for io in io_set[1:]:
-        taco_output = check_as_pytaco(c, io, binding)
+        taco_output = check_as_pytaco(c, io, substitution)
         if debug:
           print(f'TACO output: {taco_output[:10]}')
           print(f'Expected output: {io_set[0].output[1][:10]}')
@@ -262,23 +262,23 @@ def check(candidate, io_set, debug = False):
     return CheckingReturnCode.TYPE_DISCARDED
   
   print(f'Running {candidate}')
-  input_bindings = get_bindings_permutation(candidate, io_set[0])
+  input_substitutions = get_substitutions_permutation(candidate, io_set[0])
   n_runtime_errors = 0
   # We check a candidate with all the possible substitions. We stop
   # as soon as we find the first substitution that leads to the 
   # correct answer.
-  for binding in input_bindings:
+  for substitution in input_substitutions:
     try:
-      if check_binding(binding, candidate, io_set, debug):
+      if check_substitution(substitution, candidate, io_set, debug):
         return CheckingReturnCode.SUCCESS
     except RuntimeError:
       n_runtime_errors += 1
       continue
   
-  # If there was an runtime error for all the possible bindings for this candidate
+  # If there was an runtime error for all the possible substitutions for this candidate
   # we classifiy it as RUNTIME_ERROR, otherwise at there was at least one valid
-  # binding, but still gives us the wrong output.
-  if n_runtime_errors == len(input_bindings):
+  # substitution, but still gives us the wrong output.
+  if n_runtime_errors == len(input_substitutions):
     return CheckingReturnCode.RUNTIME_ERROR
   else:
     return CheckingReturnCode.CANDIDATE_TRIED
