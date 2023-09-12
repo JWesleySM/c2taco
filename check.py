@@ -139,7 +139,7 @@ def write_pytaco_program(candidate, env):
   # root of the number of elements, where 'n' is the order of the tensor.
   tensors = candidate.get_tensors()
   defined = dict([(t, False) for t in tensors])
-  # Omport PyTaco and NumPy.
+  # Import PyTaco and NumPy.
   imports = 'import pytaco as pt\nimport numpy as np\n'
   # Declare tensors.
   t_declarations = ''
@@ -181,9 +181,14 @@ def write_pytaco_program(candidate, env):
   index_vars_definition = 'i, j, k, l = pt.get_index_vars(4)\n'
   computation = candidate.lhs.replace('(', '[').replace(')', ']') + ' = '
   computation += re.sub(r'\(([i-l|,]+)\)', r'[\1]', candidate.rhs) + '\n'
+
+  replaced = dict([(t, False) for t in tensors])
   for t in tensors:
+    if replaced[t]:
+      continue
     if candidate.get_order(t) == 0:
-      computation = computation.replace(f'{t}', f'{t}[None] ', 1)
+      computation = computation.replace(f'{t}', f'{t}[None]')
+      replaced[t] = True
 
   computation += 'a.evaluate()\n'
 

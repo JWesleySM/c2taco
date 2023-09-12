@@ -7,9 +7,11 @@ from candidate import Candidate
 from io_handler import IOHandler
 from check import check, get_tensor_order, CheckingReturnCode
 
-# The list of binary operators supported in TACO. It is used in Enumerative Template Synthesis (ETS).
+# The list of binary operators supported in TACO. It is used in Enumerative Template Synthesis (ETS) or
+# in case the list of predicted operators is empty.
 BINOPS = ['+', '-', '*', '/']
 constant_id = 1
+ETS_used = False
 
 def write_log_io_fail(program):
   """Write the synthesis log in case of not finding an IO file."""
@@ -35,7 +37,7 @@ def write_log(program, solution, io_time, enumerate_time, checking_time, tried, 
     log_file.write(f'Time for checking candidates: {checking_time:.2f} seconds\n')
     log_file.write(f'Total synthesis time: {(io_time + enumerate_time + checking_time):.2f} seconds\n')
     if ETS:
-      log_file.write(f'Simple Enumerative Template Snthesis was used\n')
+      log_file.write(f'Simple Enumerative Template Synthesis was used\n')
     
 
 def break_naming_sequence(prog, t):
@@ -118,7 +120,7 @@ def get_valid_indexations(tensor, order):
   if order > 0:
     valid_indexations += '\('
     for _ in range(order):
-      valid_indexations += '(i|j|k),'
+      valid_indexations += '(i|j|k|l),'
     valid_indexations = valid_indexations.rstrip(',') + '\)'
   
   return [t for t in exrex.generate(valid_indexations) if is_valid_indexation(t)]
@@ -143,10 +145,15 @@ def get_search_space(size, orders, binops, include_constants):
                    for rhs in get_valid_indexations('-?b', orders[1])]
     return candidates
 
-  # The programs are built in a bottom-up fashion
+  # The programs are built in a bottom-up fashion.
   sub_candidates = get_search_space(size - 1, orders, binops, include_constants)
   for c in sub_candidates:
     # <EXPR> ::= <EXPR> + <EXPR> | <EXPR> - <EXPR> | <EXPR> * <EXPR> | <EXPR> / <EXPR>
+
+    # If no operators are predicted, we use all possibles
+    if not binops:
+      binops = BINOPS
+
     for op in binops:
       if include_constants:
         candidates.append(Candidate(c.lhs, c.rhs + ' ' + op + f' Cons{constant_id}'))
@@ -167,7 +174,7 @@ def get_grammar_regex(t):
   """Returns a regular expression that depicts all the possibilities of references to
   a tensor up to order 4. Used by ETS.
   """
-  return f'({t}|{t}\((i|j|k)\)|{t}\((i|j|k),(i|j|k)\)|{t}\((i|j|k),(i|j|k),(i|j|k)\)|{t}\((i|j|k),(i|j|k),(i|j|k)\),(i|j|k)\))'
+  return f'({t}|{t}\((i|j|k|l)\)|{t}\((i|j|k|l),(i|j|k|l)\)|{t}\((i|j|k|l),(i|j|k|l),(i|j|k|l)\)|{t}\((i|j|k|l),(i|j|k|l),(i|j|k|l)\),(i|j|k|l)\))'
 
 
 def ETS(size):
@@ -188,7 +195,7 @@ def ETS(size):
     
     return candidates
 
-  # The programs are built in a bottom-up fashion
+  # The programs are built in a bottom-up fashion.
   sub_candidates = ETS(size - 1)
   for c in sub_candidates:
     # <EXPR> ::= <EXPR> + <EXPR> | <EXPR> - <EXPR> | <EXPR> * <EXPR> | <EXPR> / <EXPR>
@@ -240,7 +247,34 @@ def check_candidates(candidates, io_set):
   return None, type_discarded, error_discarded, tried, checking_time
 
 
-def synthesize(original, size, orders, binops):
+def call_ETS(size, io_set):
+  global ETS_used
+  ETS_used = True
+  t_enumerate_start = time.time()
+  ETS_candidates = ETS(size)
+  enumerate_time = time.time() - t_enumerate_start
+  total_candidates = len(ETS_candidates)
+  c, type_discarded, error_discarded, tried, checking_time = check_candidates(ETS_candidates, io_set)
+  return c, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates
+
+
+def guided_synthesis(size, orders, binops, include_constants, io_set):
+  t_enumerate_start = time.time()
+  candidates = get_search_space(size, orders, binops, include_constants)
+  enumerate_time = time.time() - t_enumerate_start
+  total_candidates = len(candidates)
+  c, type_discarded, error_discarded, tried, checking_time = check_candidates(candidates, io_set)
+  if c:
+    return c, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates
+  else:
+    # If we explore the entire search space built by the initial features and still
+    # did not find the correct solution, we check all possibilities using simple
+    # enumerative template synthesis.
+    return call_ETS(size, io_set)
+
+
+
+def synthesize(original, size, orders, binops, log):
   """Solve the synthesis problem of findiing a TACO program equivalent to the
   original implementation. We initially enumerate candiddates in the search 
   space driven by program features.
@@ -251,36 +285,31 @@ def synthesize(original, size, orders, binops):
   try:
     io_set = IOHandler.parse_io(original_path)
   except FileNotFoundError:
-    write_log_io_fail(original_path)
+    if log:
+      write_log_io_fail(original_path)
     exit(1)
 
   io_time = time.time() - t_io_start
 
-  # We check whether there are constant values in the io samples
-  # In positive case, we should consider candidates that contains
-  # constants. We can exclude them from search space otherwise.
-  include_constants = True if io_set[0].constants else False
-  t_enumerate_start = time.time()
-  candidates = get_search_space(size, orders, binops, include_constants)
-  enumerate_time = time.time() - t_enumerate_start
-  total_candidates = len(candidates)
-  c, type_discarded, error_discarded, tried, checking_time = check_candidates(candidates, io_set)
-
-  if c:
-    write_log(original_path, c, io_time, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates)
+  # If no orders are predicted or if there is no order predicted for
+  # each tensor in the exptected program, we cannot used guided 
+  # synthesis and use ETS instead.
+  if not orders:
+    solution, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates = call_ETS(size, io_set)
   else:
-    # If we explore the entire search space built by the initial features and still
-    # did not find the correct solution, we check all possibilities using simple
-    # enumerative template synthesis.
-    t_enumerate_start = time.time()
-    ETS_candidates = ETS(size)
-    enumerate_time = time.time() - t_enumerate_start
-    total_candidates = len(ETS_candidates)
-    c, type_discarded, error_discarded, tried, checking_time = check_candidates(ETS_candidates, io_set)
-    if c:
-      write_log(original_path, c, io_time, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates, ETS = True)
-      return
-    
-    # No solution was found
-    write_log(original_path, None, io_time, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates, ETS = True)
+    if len(orders) != size + 1:
+      solution, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates = call_ETS(size, io_set)
+    else:
+      # We check whether there are constant values in the io samples
+      # In positive case, we should consider candidates that contains
+      # constants. We can exclude them from search space otherwise.
+      include_constants = True if io_set[0].constants else False
+      solution, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates = guided_synthesis(size, orders, binops, include_constants, io_set)
+  
+  if log:
+    if solution:
+      write_log(original_path, solution, io_time, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates, ETS = ETS_used)
+    else: 
+      # No solution was found
+      write_log(original_path, None, io_time, enumerate_time, checking_time, tried, type_discarded, error_discarded, total_candidates, ETS = True)
   
