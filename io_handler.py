@@ -108,10 +108,10 @@ class IOHandler():
   the different IO samples and convert it into a set of IOExample objects.
   """
   @staticmethod
-  def parse_io(program_path):
+  def parse_io(program_path, io_path):
     io_set = []
     try:
-      with open(os.path.join(os.path.dirname(program_path), f'{os.path.basename(program_path)[:-2]}_io.json'), 'r') as io_file:
+      with open(io_path, 'r') as io_file:
         io_pairs = json.load(io_file)
     except FileNotFoundError as e:
       raise e

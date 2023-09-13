@@ -274,8 +274,8 @@ def guided_synthesis(size, orders, binops, include_constants, io_set):
 
 
 
-def synthesize(original, size, orders, binops, log):
-  """Solve the synthesis problem of findiing a TACO program equivalent to the
+def synthesize(original, io_path, size, orders, binops, log):
+  """Solve the synthesis problem of finding a TACO program equivalent to the
   original implementation. We initially enumerate candiddates in the search 
   space driven by program features.
   """
@@ -283,7 +283,7 @@ def synthesize(original, size, orders, binops, log):
   # Create a set of IO samples
   t_io_start = time.time()
   try:
-    io_set = IOHandler.parse_io(original_path)
+    io_set = IOHandler.parse_io(original_path, os.path.abspath(io_path))
   except FileNotFoundError:
     if log:
       write_log_io_fail(original_path)
