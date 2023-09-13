@@ -74,4 +74,98 @@ C2TACO will print the solution in the standard output, but it will also generate
 If a solution is not found, the log is still produced. If C2TACO has to use ETS, that information will also appear in the log file.
 
 # Example
-WIP
+
+Consider the program below, taken from the UTDSP digital signal processing benchmark suite:
+
+```c
+1.  void mult_big(int A_ROW, int A_COL, int B_ROW, int B_COL, int* a_matrix,
+2.     int* b_matrix, int* c_matrix){
+3.   for (int i = 0; i < A_ROW; i++) {
+4.     for (int j = 0; j < B_COL; j++) {
+5.       int sum = 0.0;
+6.       for (int k = 0; k < B_ROW; ++k) {
+7.         sum += a_matrix[i * A_ROW + k] * b_matrix[k * B_ROW + j];
+8.       }
+9.       c_matrix[i * A_ROW + j] = sum;
+10.    }
+11.  }
+12. }
+```
+
+C2TACO receives that function together with IO samples obtained by isolated executing `mult_big`. Then, it perform three different static code analyses on this program.
+
+  * program length: this analysis will determine that there are 3 references for non-local tensor variables on the program, `a_matrix` and `b_matrix` at line 7 and `c_matrix` at line 9.
+  * tensor orders/dimensions: by performing a combination of array recover and delinearization, this analysis points out that each of the tensors involded in the computation have order = 2, i.e., they are matrices.
+  * operators: this analysis accounts for arithmetic operators in relevant computations in the program. For `mult_big`, there is a multiplication (`*`) operator at line 7.
+
+Using the features extraced via the analyses, C2TACO starts the synthesis process searching specifically for TACO programs with 3 tensors, all of them having order = 2 and containing multiplication operators. The result of synthesis is a program written in the TACO index notation as shown below:
+
+```
+a(i,j) = b(i,k) * c(k,j)
+```
+
+which corresponds to matrix-matrix product. The program can then be passed as input to the TACO compiler, which can generate eihter high-performance C when targeting CPUs or CUDA code for GPUs. 
+
+C version:
+```c
+int compute(taco_tensor_t *a, taco_tensor_t *b, taco_tensor_t *c) {
+  int a1_dimension = (int)(a->dimensions[0]);
+  int a2_dimension = (int)(a->dimensions[1]);
+  int32_t* restrict a_vals = (int32_t*)(a->vals);
+  int b1_dimension = (int)(b->dimensions[0]);
+  int b2_dimension = (int)(b->dimensions[1]);
+  int32_t* restrict b_vals = (int32_t*)(b->vals);
+  int c1_dimension = (int)(c->dimensions[0]);
+  int c2_dimension = (int)(c->dimensions[1]);
+  int32_t* restrict c_vals = (int32_t*)(c->vals);
+
+  #pragma omp parallel for schedule(static)
+  for (int32_t pa = 0; pa < (a1_dimension * a2_dimension); pa++) {
+    a_vals[pa] = 0;
+  }
+
+  #pragma omp parallel for schedule(runtime)
+  for (int32_t i = 0; i < b1_dimension; i++) {
+    for (int32_t k = 0; k < c1_dimension; k++) {
+      int32_t kb = i * b2_dimension + k;
+      for (int32_t j = 0; j < c2_dimension; j++) {
+        int32_t ja = i * a2_dimension + j;
+        int32_t jc = k * c2_dimension + j;
+        a_vals[ja] = a_vals[ja] + b_vals[kb] * c_vals[jc];
+      }
+    }
+  }
+  return 0;
+}
+
+```
+Cuda version:
+```cuda
+void computeDeviceKernel0(taco_tensor_t * __restrict__ a, taco_tensor_t * __restrict__ b, taco_tensor_t * __restrict__ c){
+  int32_t i78 = blockIdx.x;
+  int32_t i79 = (threadIdx.x % (256));
+  if (threadIdx.x >= 256) {
+    return;
+  }
+
+  int32_t i = i78 * 256 + i79;
+  if (i >= b1_dimension)
+    return;
+
+  for (int32_t k = 0; k < c1_dimension; k++) {
+    int32_t kb = i * b2_dimension + k;
+    for (int32_t j = 0; j < c2_dimension; j++) {
+      int32_t ja = i * a2_dimension + j;
+      int32_t jc = k * c2_dimension + j;
+      a_vals[ja] = a_vals[ja] + b_vals[kb] * c_vals[jc];
+    }
+  }
+}
+```
+
+
+
+
+
+
+
