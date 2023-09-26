@@ -1,6 +1,6 @@
 # C2TACO: Lifting Tensor Code to TACO
 
-C2TACO is a lifting tool for synthesizing TACO, a well-known tensor DSL, from C code. We develop a smart, enumerative synthesizer that uses automatically generated IO examples and program analyses to efficiently generate code. 
+C2TACO is a lifting tool for synthesizing TACO, a well-known tensor DSL, from C code. We develop a guided enumerative synthesizer that uses automatically generated IO examples and program analyses to efficiently generate code. 
 
 C2TACO takes as input a C function and performs source code analyses to retrieve features from the said function and use them as search aid during synthesis. Examples of features extracted are the number of tensor references and constants, the order of each tensor, and the binary operators present in the implemenetation. Using these features, C2TACO builds a reduced search space where the solution is more likely to be. We use a bottom-up enumerative synthesis algortihm to enumerate template TACO programs, i.e., TACO programs that use symbolic variables in place of all tensors and constants. We then check whether there is a valid substitution of inputs and constant literals for these symbolic variables that satisfies the specification. In our case, the specification consists of input-output examples.
 
@@ -17,6 +17,12 @@ This will download the standard repository. A suite of tensor benchmarks is also
 
 ```
 $ git clone --recurse-submodules https://github.com/JWesleySM/c2taco
+```
+
+C2TACO's code analyses are implemented as Clang plugins. To build the libraries run the script provided (using bash) passing as argument the path to the `build` directory of your LLVM installation:
+
+```
+$ ./build_code_analyses.sh <path-to-llvm-build-dir>
 ```
 
 To use C2TACO, you also need to install the following:
@@ -53,13 +59,14 @@ To use C2TACO, you also need to install the following:
     
 # Usage
 
-Given an C code that performs some C tensor manipulations, C2TACO will look for an equivalent program in TACO. Correctness is done by checking behavioral equivalente. Therefore, input-output examples are also required as input to the synthesizer. IO files are specified in the JSON format. If you want to automatically generate IO samples for a C function, take a look at ![instructions](https://github.com/JWesleySM/c2taco/blob/main/io_gen/README.md). Run the synthesizer by providing both the original C implementation and the IO file as input:
+Given an C code that performs some C tensor manipulations, C2TACO will look for an equivalent program in TACO. Correctness is done by checking behavioral equivalente. Therefore, input-output examples are also required as input to the synthesizer. IO files are specified in the JSON format. If you want to automatically generate IO samples for a C function, take a look at ![instructions](https://github.com/JWesleySM/c2taco/blob/main/io_gen/README.md). Run the synthesizer by providing both the original C implementation, the IO file, and the location of the Clang compiler as input:
 
 ```
-$ python3 main.py <path-to-c-program> <path-to-IO-samples>
+$ python3 c2taco.py <path-to-c-program> <path-to-IO-samples> <path-to-clang-executable>
 ```
 
-C2TACO will print the solution in the standard output, but it will also generate a log at `<path-to-c-program>/name-of-c-program-lifting.log`. This log contains the following statistics of the synthesis execution:
+C2TACO will print the solution in the standard output, but it will also generate a lifting log at `<path-to-c-program>/name-of-c-program-lifting.log`. Log generation can be disabled by adding the `--no_log` option to the command above. 
+The lifting log contains the following statistics of the synthesis execution:
 
 * The solution itself
 * Search space size, i.e., number of candidates in the search space considered
@@ -71,7 +78,7 @@ C2TACO will print the solution in the standard output, but it will also generate
 * Time for checking candidates
 * Total synthesis time
 
-If a solution is not found, the log is still produced. If C2TACO has to use ETS, that information will also appear in the log file.
+If a solution is not found, the log is still produced. If C2TACO has to use ETS, that information will also appear in the log file. 
 
 # Example
 
@@ -162,10 +169,3 @@ void computeDeviceKernel0(taco_tensor_t * __restrict__ a, taco_tensor_t * __rest
   }
 }
 ```
-
-
-
-
-
-
-
