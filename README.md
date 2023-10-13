@@ -19,23 +19,33 @@ This will download the standard repository. A suite of tensor benchmarks is also
 $ git clone --recurse-submodules https://github.com/JWesleySM/c2taco
 ```
 
-C2TACO's code analyses are implemented as Clang plugins. To build the libraries run the script provided (using bash) passing as argument the path to the `build` directory of your LLVM installation:
+C2TACO's code analyses are implemented as Clang plugins. LLVM is necessary to build the libraries. You can either [download the binaries](https://releases.llvm.org/download.html#14.0.0) or [build it from source](https://llvm.org/docs/GettingStarted.html#getting-the-source-code-and-building-llvm). The analyses were implemented using Clang/LLVM version 14.0.0, so it is recommended to use that. Once you have LLVM installed, build the analyses by running the script provided (using bash) passing as argument the path to the `bin` directory of your LLVM installation:
 
 ```
-$ ./build_code_analyses.sh <path-to-llvm-build-dir>
+$ ./build_code_analyses.sh <path-to-llvm-dir>
 ```
+
+*NOTE:* in case you have built LLVM from source, the binaries will be located on the `build` directory.
 
 To use C2TACO, you also need to install the following:
 
 - TACO/PyTaco:
 
-  C2TACO uses TACO ![Python API](https://tensor-compiler.org/docs/pytensors.html) to check candidates during synthesis.
+  C2TACO uses TACO [Python API](https://tensor-compiler.org/docs/pytensors.html) to check candidates during synthesis.
 
   * Follow the Build and test instructions in the TACO ![repository](https://github.com/tensor-compiler/taco)
   * *IMPORTANT:* build TACO enabling the Python API (-DPYTHON=ON)
   * After installing, make sure to include PyTaco in the Python path environment variable:
   ```
   $ export PYTHONPATH=<path-to-taco-repo>/build/lib:$PYTHONPATH
+  ```
+
+- SciPY:
+
+  SciPY is needed by TACO's Python API. Install it via `pip`:
+
+  ```
+  $ pip install scipy
   ```
 
 - exrex:
@@ -51,10 +61,10 @@ To use C2TACO, you also need to install the following:
 
   C2TACO uses the clang Python module to perform static analyses on programs.
 
-  * Install clang python bindings via `pip`:
+  * Install clang python bindings via `pip` (tested against version 14):
 
   ```
-  $ pip install clang
+  $ pip install clang==14
   ```
     
 # Usage
@@ -146,7 +156,7 @@ int compute(taco_tensor_t *a, taco_tensor_t *b, taco_tensor_t *c) {
 }
 
 ```
-Cuda version:
+CUDA version:
 ```cuda
 void computeDeviceKernel0(taco_tensor_t * __restrict__ a, taco_tensor_t * __restrict__ b, taco_tensor_t * __restrict__ c){
   int32_t i78 = blockIdx.x;
