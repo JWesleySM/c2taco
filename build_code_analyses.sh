@@ -17,7 +17,7 @@ for dir in code_analysis/*; do
   fi
   cd $dir
   mkdir -p build && cd build
-  cmake .. -DLLVM_DIR=${LLVM_BUILD_DIR}/lib/cmake/llvm -DClang_DIR=${LLVM_BUILD_DIR}/lib/cmake/clang -DCMAKE_C_COMPILER=$cc -DCMAKE_CXX_COMPILER=$cxxs
+  cmake .. -DLLVM_DIR=${LLVM_BUILD_DIR}/lib/cmake/llvm -DClang_DIR=${LLVM_BUILD_DIR}/lib/cmake/clang -DCMAKE_C_COMPILER=$cc -DCMAKE_CXX_COMPILER=$cxx
   make -j$(nproc)
   cd ../../../
 done
