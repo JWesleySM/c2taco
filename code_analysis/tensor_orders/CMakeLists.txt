@@ -19,7 +19,7 @@ list(APPEND CMAKE_PREFIX_PATH "${CT_Clang_INSTALL_DIR}/lib/cmake/clang/")
 
 find_package(Clang REQUIRED CONFIG)
 
-# TacoExtractor includes headers from LLVM and Clang - update the include paths
+# TensorOrders includes headers from LLVM and Clang - update the include paths
 # accordingly
 include_directories(SYSTEM "${LLVM_INCLUDE_DIRS};${CLANG_INCLUDE_DIRS}")
 
@@ -38,10 +38,3 @@ endif()
 # 3. ADD THE TARGET
 #===============================================================================
 add_library(TensorOrders SHARED tensor_orders.cpp ../code_analysis.cpp)
-
-# Allow undefined symbols in shared objects on Darwin (this is the default
-# behaviour on Linux)
-target_link_libraries(TensorOrders
-  "$<$<PLATFORM_ID:Darwin>:-undefined dynamic_lookup>")
-  target_link_libraries(TensorOrders
-  clangTooling)

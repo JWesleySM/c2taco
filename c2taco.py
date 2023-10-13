@@ -22,7 +22,6 @@ def run_code_analysis(source_program, clang, analysis):
   try:
    arguments = [clang, '-cc1', '-load', f'code_analysis/{analysis_dir}/build/lib{analysis}.so', '-plugin', plugin, source_program] 
    command = subprocess.run(arguments, check = True, capture_output = True)
-   print('Command output: ', command.stdout.rstrip().decode('utf-8'))
    output = command.stdout.rstrip().decode('utf-8')
    if analysis == 'ProgramLength':
      return int(output)
