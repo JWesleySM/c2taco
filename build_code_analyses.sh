@@ -7,16 +7,17 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
-LLVM_BUILD_DIR=$1
+LLVM_BUILD_DIR=$(realpath -L $1)
+cc=${LLVM_BUILD_DIR}/bin/clang
+cxx=${LLVM_BUILD_DIR}/bin/clang++
 
 for dir in code_analysis/*; do
   if [ -f $dir ]; then
     continue
   fi
   cd $dir
-  pwd
   mkdir -p build && cd build
-  cmake .. -DLLVM_DIR=${LLVM_BUILD_DIR}/lib/cmake/llvm -DClang_DIR=${LLVM_BUILD_DIR}/lib/cmake/clang
+  cmake .. -DLLVM_DIR=${LLVM_BUILD_DIR}/lib/cmake/llvm -DClang_DIR=${LLVM_BUILD_DIR}/lib/cmake/clang -DCMAKE_C_COMPILER=$cc -DCMAKE_CXX_COMPILER=$cxxs
   make -j$(nproc)
   cd ../../../
 done
