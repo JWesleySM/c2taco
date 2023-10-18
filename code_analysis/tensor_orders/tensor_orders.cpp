@@ -27,7 +27,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "../code_analysis.h"
 
-
 //-----------------------------------------------------------------------------
 // RecursiveASTVisitor
 //-----------------------------------------------------------------------------
@@ -39,6 +38,16 @@ public:
   std::set<clang::VarDecl*> LoopIterators_;
   std::set<clang::Stmt*> Loops_;
   clang::Expr* ReturnValue_ = nullptr;
+  bool ParseTACO_ = false;
+  std::vector<clang::VarDecl*>TACO_declarations_;
+
+
+  bool VisitTypedefDecl(clang::TypedefDecl *TD){
+    if(TD->getNameAsString() == "taco_tensor_t")
+      ParseTACO_ = true;
+    
+    return true;
+  }
 
 
   bool VisitVarDecl(clang::VarDecl *VD){
@@ -47,6 +56,16 @@ public:
     
     if(!VD->hasInit())
       return true;
+
+    // Save declarations of local variables in TACO-generated programs in a different data structure
+    if(ParseTACO_)
+      if(VD->getNameAsString().ends_with("_dimension") || VD->getNameAsString().ends_with("_vals")){
+        TACO_declarations_.push_back(VD);     
+        return true;
+      }
+      else{
+        return true;
+      }
 
     clang::DeclRefExpr* VarReference = clang::DeclRefExpr::CreateEmpty(VD->getASTContext(), false, true, false, 0);
     VarReference->setType(VD->getType());
@@ -74,7 +93,6 @@ public:
       if(!clang::isa<clang::IntegerLiteral>(RS->getRetValue()))
         ReturnValue_ = RS->getRetValue();
     } 
-
     return true;
   }
 
@@ -195,6 +213,7 @@ private:
     return false;
   }
 
+
   int recoverArray(clang::UnaryOperator* OP, bool IsOutput){
     clang::VarDecl* PointerVar = getVariableDeclaration(getVariableReference(OP));
     std::map<clang::VarDecl*, bool>Coeffs;
@@ -265,7 +284,7 @@ private:
         // Reference to function parameters
         if(isParameter(Decl)){
           Orders->push_back(getOrder(clang::dyn_cast<clang::Expr>(S), false));
-          return;
+          return; 
         }
         else if(Decl->isLocalVarDecl()){
           // Get the order of references to parameters or constants
@@ -299,25 +318,50 @@ public:
   explicit TensorOrdersConsumer()
          :Visitor_(new TensorOrdersVisitor()){}
 
+  std::vector<int>getOrdersInTACOProgram(){
+    std::vector<int> Orders;
+    for(auto& Var : Visitor_->TACO_declarations_){
+      if(Var->getNameAsString().ends_with("_dimension")){
+        if(Orders.empty())
+          Orders.push_back(1);
+        else
+          Orders.back()++;
+        }
+      else if(Var->getNameAsString().ends_with("_vals")){
+        Orders.push_back(0);
+      }
+    }
+
+    Orders.pop_back();
+    return Orders;
+  }
+
   std::vector<int> AnalyseDefinitions(){
+    if(Visitor_->ParseTACO_)
+      return getOrdersInTACOProgram();
+    
     std::vector<int> Orders;
     for(const auto& [Var, Def] : Visitor_->Definitions_){
       // We found an assignment to the output variable
       if(isParameter(Var) || isReturn(Var, Visitor_->ReturnValue_) || mayBeOutputAlias(Var, Def)){
+        if(!Def->getSourceRange().isValid())
+          continue;
+
         Orders.push_back(getOrder(Def->getLHS(), true));
         getOrderOfTensorsAndConstantsInDefinition(Def->getRHS(), &Orders);
-        
+          
         // In case of compound assignments, the order of the LHS must be duplicated
         if(Def->isCompoundAssignmentOp()){
           if(Visitor_->ReturnValue_)
             continue;
           if(mayBeMM(Def, Visitor_->Definitions_))
             continue;
-
+  
           Orders.insert(Orders.begin() + 1, Orders[0]);
         }
       }
     }
+
     return Orders;
   }
 

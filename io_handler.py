@@ -4,9 +4,6 @@ import json
 import os
 from typing import Dict, List, NamedTuple
 
-import clang as cl
-cl.cindex.Config.set_library_file('/usr/lib/x86_64-linux-gnu/libclang-10.so')
-
 LOOP_TYPES = [CursorKind.FOR_STMT, CursorKind.WHILE_STMT, CursorKind.DO_STMT]
 
 class Variable(NamedTuple):

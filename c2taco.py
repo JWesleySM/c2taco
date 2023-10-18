@@ -20,7 +20,7 @@ def run_code_analysis(source_program, clang, analysis):
     exit(1)
 
   try:
-   arguments = [clang, '-cc1', '-load', f'code_analysis/{analysis_dir}/build/lib{analysis}.so', '-plugin', plugin, source_program] 
+   arguments = [clang, '-c', '-Xclang', '-load', '-Xclang', f'code_analysis/{analysis_dir}/build/lib{analysis}.so', '-Xclang', '-plugin', '-Xclang', plugin, source_program]
    command = subprocess.run(arguments, check = True, capture_output = True)
    output = command.stdout.rstrip().decode('utf-8')
    if analysis == 'ProgramLength':

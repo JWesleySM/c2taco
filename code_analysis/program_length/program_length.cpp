@@ -27,7 +27,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "../code_analysis.h"
 
-
 //-----------------------------------------------------------------------------
 // RecursiveASTVisitor
 //-----------------------------------------------------------------------------
@@ -37,6 +36,16 @@ public:
 
   std::map<clang::VarDecl*, clang::BinaryOperator*>Definitions_;
   clang::Expr* ReturnValue_ = nullptr;
+  int TACOProgramLength_;
+  bool ParseTACO_ = false;
+
+
+  bool VisitTypedefDecl(clang::TypedefDecl *TD){
+    if(TD->getNameAsString() == "taco_tensor_t")
+      ParseTACO_ = true;
+    
+    return true;
+  }
 
 
   bool VisitVarDecl(clang::VarDecl *VD){
@@ -72,6 +81,15 @@ public:
       if(!clang::isa<clang::IntegerLiteral>(RS->getRetValue()))
         ReturnValue_ = RS->getRetValue();
     } 
+
+    return true;
+  }
+
+  bool VisitFunctionDecl(clang::FunctionDecl* FD){
+    if(ParseTACO_){
+      TACOProgramLength_ = FD->getNumParams() - 1;
+      return false;
+    }
 
     return true;
   }
@@ -140,7 +158,6 @@ public:
 
           ProgramLength++;
         }
-        
       }
     }
     return ProgramLength;
@@ -149,7 +166,8 @@ public:
 
   void HandleTranslationUnit(clang::ASTContext &Context) override{
     Visitor_->TraverseDecl(Context.getTranslationUnitDecl());
-    llvm::outs() << getProgramLength() <<"\n";
+    int ProgramLength = Visitor_->ParseTACO_ ? Visitor_->TACOProgramLength_ : getProgramLength();
+    llvm::outs() << ProgramLength <<"\n";
   }
 
 };

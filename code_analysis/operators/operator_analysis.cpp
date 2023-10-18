@@ -27,7 +27,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "../code_analysis.h"
 
-
 //-----------------------------------------------------------------------------
 // RecursiveASTVisitor
 //-----------------------------------------------------------------------------
@@ -37,7 +36,14 @@ public:
 
   std::map<clang::VarDecl*, clang::BinaryOperator*>Definitions_;
   clang::Expr* ReturnValue_ = nullptr;
+  bool ParseTACO_ = false;
 
+  bool VisitTypedefDecl(clang::TypedefDecl *TD){
+    if(TD->getNameAsString() == "taco_tensor_t")
+      ParseTACO_ = true;
+    
+    return true;
+  }
 
   bool VisitVarDecl(clang::VarDecl *VD){
     if(!VD->isLocalVarDecl())
@@ -45,6 +51,10 @@ public:
     
     if(!VD->hasInit())
       return true;
+
+    if(ParseTACO_)
+      if(VD->getNameAsString().ends_with("_dimension") || VD->getNameAsString().ends_with("_vals"))
+        return true;
 
     clang::DeclRefExpr* VarReference = clang::DeclRefExpr::CreateEmpty(VD->getASTContext(), false, true, false, 0);
     VarReference->setType(VD->getType());
@@ -60,7 +70,7 @@ public:
   bool VisitBinaryOperator(clang::BinaryOperator* BO){
     if(!BO->isAssignmentOp())
       return true;
-    
+
     Definitions_[getVariableDeclaration(getVariableReference(BO->getLHS()))] = BO;
     return true;
   }

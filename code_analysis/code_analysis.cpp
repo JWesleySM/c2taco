@@ -47,6 +47,23 @@ bool isReturn(clang::ValueDecl* Var, clang::Expr* ReturnValue){
 }
 
 
+bool isTACOSupportedExpr(clang::Expr* E){
+  if(clang::BinaryOperator* BO = clang::dyn_cast<clang::BinaryOperator>(E)){
+    switch (BO->getOpcode()){
+      case clang::BinaryOperator::Opcode::BO_Add:
+      case clang::BinaryOperator::Opcode::BO_Sub:
+      case clang::BinaryOperator::Opcode::BO_Mul:
+      case clang::BinaryOperator::Opcode::BO_Div:
+        return true;
+    
+      default:
+        return false;
+    }
+  }
+  return false;
+}
+
+
 bool mayBeOutputAlias(clang::VarDecl* Decl, clang::BinaryOperator* Definition){
   if(!Decl->getType()->isPointerType())
     return false;
@@ -56,6 +73,14 @@ bool mayBeOutputAlias(clang::VarDecl* Decl, clang::BinaryOperator* Definition){
   if(clang::UnaryOperator* UO = clang::dyn_cast<clang::UnaryOperator>(FirstChild))
     return true;
   
+  if(Decl->hasInit()){
+    clang::VarDecl* VarUsedInDecl = getVariableDeclaration(getVariableReference(Decl->getInit()));
+    if(VarUsedInDecl)
+      if(isParameter(VarUsedInDecl))
+        return isTACOSupportedExpr(Definition->getRHS());
+
+  }
+
   return false;
 }
 
