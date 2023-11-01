@@ -67,15 +67,36 @@ def redefine_tensor(prog, t):
   return False
 
 
+def get_tensor_indexing(t):
+  """Return the indexing expression of a tensor reference
+  """
+  if get_tensor_order(t) == 0:
+    return ''
+  
+  return t[t.find('(') + 1:t.find(')')]
+
+
 def is_non_supported_program(lhs, prog, op, t):
   """Check if insert tensor 't' in the current program does not
-  yield an invalid TACO program. More specifically, TACO does
-  only supports a scalar in the left-hand side of a program if
+  yield an invalid TACO program. 
+  IMPORTANT: this function returns true if the resulting program is
+  invalid.
+  """
+
+  """In face of division the indexing of both tensors must be the 
+  same for non-scalar tensors
+  """
+  if op == '/' and get_tensor_order(t) > 0:
+    for elem in prog.split():
+      if(re.match('^-?[b-e]|Cons', elem)):
+        if(get_tensor_indexing(elem) != get_tensor_indexing(t)):
+          return True
+  
+  """For example, TACO  only supports
+  a scalar in the left-hand side of a program if
      - all the tensors in the right-hand side are also scalars or
      - the binary operator is multiplication.
   For example, a = b(i) * c(i) is valid, but a = b(i) + c(i) is
-  invalid.
-  IMPORTANT: this function returns true if the resulting program is
   invalid.
   """
   if op == '*':
