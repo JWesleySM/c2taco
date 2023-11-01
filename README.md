@@ -55,6 +55,12 @@ Given an C code that performs some C tensor manipulations, C2TACO will look for 
 $ python3 c2taco.py <path-to-c-program> <path-to-IO-samples> <path-to-clang-executable>
 ```
 
+For example, to run C2TACO on the ![`add_array`](https://github.com/JWesleySM/c2taco/benchmarks/artificial/add_array.c) program, run:
+
+```
+$ python3 c2taco.py ./benchmarks/artificial/add_array.c ./benchmarks/artificial/add_array_io.json <path-to-clang-executable>
+```
+
 C2TACO will print the solution in the standard output, but it will also generate a lifting log at `<path-to-c-program>/name-of-c-program-lifting.log`. Log generation can be disabled by adding the `--no_log` option to the command above. 
 The lifting log contains the following statistics of the synthesis execution:
 
@@ -68,18 +74,18 @@ The lifting log contains the following statistics of the synthesis execution:
 * Time for checking candidates
 * Total synthesis time
 
-If a solution is not found, the log is still produced. If C2TACO has to use ETS, that information will also appear in the log file. Some examples of programs are available in the ![benchmarks]((https://github.com/JWesleySM/c2taco/blob/main/benchmarks)) directory.
+If a solution is not found, the log is still produced. If C2TACO has to use ETS, that information will also appear in the log file. Some examples of programs are available in the ![benchmarks](https://github.com/JWesleySM/c2taco/blob/main/benchmarks) directory.
 
 # Example
 
-Consider the program below, taken from the UTDSP digital signal processing benchmark suite:
+Consider the program below, taken and adapted from the UTDSP digital signal processing benchmark suite:
 
 ```c
-1.  void mult_big(int A_ROW, int A_COL, int B_ROW, int B_COL, int* a_matrix,
-2.     int* b_matrix, int* c_matrix){
+1.  void mult(int A_ROW, int A_COL, int B_ROW, int B_COL, int a_matrix[A_ROW][A_COL],
+2.   int b_matrix[B_ROW][B_COL], int c_matrix[C_ROW][C_COL]){
 3.   for (int i = 0; i < A_ROW; i++) {
 4.     for (int j = 0; j < B_COL; j++) {
-5.       int sum = 0.0;
+5.       int sum = 0;
 6.       for (int k = 0; k < B_ROW; ++k) {
 7.         sum += a_matrix[i * A_ROW + k] * b_matrix[k * B_ROW + j];
 8.       }
@@ -89,11 +95,11 @@ Consider the program below, taken from the UTDSP digital signal processing bench
 12. }
 ```
 
-C2TACO receives that function together with IO samples obtained by isolated executing `mult_big`. Then, it perform three different static code analyses on this program.
+C2TACO receives that function together with IO samples obtained by running `mult`. Then, it perform three different static code analyses on this program.
 
   * program length: this analysis will determine that there are 3 references for non-local tensor variables on the program, `a_matrix` and `b_matrix` at line 7 and `c_matrix` at line 9.
   * tensor orders/dimensions: by performing a combination of array recover and delinearization, this analysis points out that each of the tensors involded in the computation have order = 2, i.e., they are matrices.
-  * operators: this analysis accounts for arithmetic operators in relevant computations in the program. For `mult_big`, there is a multiplication (`*`) operator at line 7.
+  * operators: this analysis accounts for arithmetic operators in relevant computations in the program. For `mult`, there is a multiplication (`*`) operator at line 7.
 
 Using the features extraced via the analyses, C2TACO starts the synthesis process searching specifically for TACO programs with 3 tensors, all of them having order = 2 and containing multiplication operators. The result of synthesis is a program written in the TACO index notation as shown below:
 
@@ -159,6 +165,14 @@ void computeDeviceKernel0(taco_tensor_t * __restrict__ a, taco_tensor_t * __rest
   }
 }
 ```
+
+If you want to reproduce this example, run:
+
+```
+$ python3 c2taco.py ./benchmarks/real/utdsp/mult.c ./benchmarks/real/utdsp/mult_io.json <path-to-clang-executable>
+```
+
+
 # How to Cite
 
 If you use C2TACO, please refer the reference [paper](https://dl.acm.org/doi/10.1145/3624007.3624053):
