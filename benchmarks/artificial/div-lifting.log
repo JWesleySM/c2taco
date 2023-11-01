@@ -1,0 +1,10 @@
+Log for /home/jw/phd/lifting/git/lifting-benchmarks/artificial/div.c
+Solution: a(i) = b(i) / c(i)
+Search space size: 256 candidates
+Candidates tried: 2
+Candidates discarded by type checking: 0
+Candidates error: 3
+Time for parsing IO: 0.08 seconds
+Time for enumerate candidates: 0.01 seconds
+Time for checking candidates: 2.10 seconds
+Total synthesis time: 2.18 seconds

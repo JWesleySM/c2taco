@@ -1,0 +1,10 @@
+Log for /home/jw/phd/lifting/git/lifting-benchmarks/artificial/5_taco.c
+Solution: a(i,j) = b(i)
+Search space size: 96 candidates
+Candidates tried: 1
+Candidates discarded by type checking: 0
+Candidates error: 0
+Time for parsing IO: 0.07 seconds
+Time for enumerate candidates: 0.00 seconds
+Time for checking candidates: 0.77 seconds
+Total synthesis time: 0.85 seconds

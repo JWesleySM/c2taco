@@ -1,0 +1,10 @@
+Log for /home/jw/phd/lifting/git/lifting-benchmarks/artificial/add.c
+Solution: a = b + c
+Search space size: 4 candidates
+Candidates tried: 1
+Candidates discarded by type checking: 1
+Candidates error: 0
+Time for parsing IO: 0.05 seconds
+Time for enumerate candidates: 0.00 seconds
+Time for checking candidates: 0.47 seconds
+Total synthesis time: 0.52 seconds

@@ -13,11 +13,6 @@ Clone the C2TACO repository by:
 ```
 $ git clone https://github.com/JWesleySM/c2taco
 ```
-This will download the standard repository. A suite of tensor benchmarks is also available as a submodule. If you wish to use said suite, clone this repository using the command below:
-
-```
-$ git clone --recurse-submodules https://github.com/JWesleySM/c2taco
-```
 
 C2TACO's code analyses are implemented as Clang plugins. LLVM is necessary to build the libraries. You can either [download the binaries](https://releases.llvm.org/download.html#14.0.0) or [build it from source](https://llvm.org/docs/GettingStarted.html#getting-the-source-code-and-building-llvm). The analyses were implemented using Clang/LLVM version 14.0.0, so it is recommended to use that. Once you have LLVM installed, build the analyses by running the script provided (using bash) passing as argument the path to the `bin` directory of your LLVM installation:
 
@@ -73,7 +68,7 @@ The lifting log contains the following statistics of the synthesis execution:
 * Time for checking candidates
 * Total synthesis time
 
-If a solution is not found, the log is still produced. If C2TACO has to use ETS, that information will also appear in the log file. 
+If a solution is not found, the log is still produced. If C2TACO has to use ETS, that information will also appear in the log file. Some examples of programs are available in the ![benchmarks]((https://github.com/JWesleySM/c2taco/blob/main/benchmarks)) directory.
 
 # Example
 
