@@ -40,31 +40,16 @@ To use C2TACO, you also need to install the following:
   $ export PYTHONPATH=<path-to-taco-repo>/build/lib:$PYTHONPATH
   ```
 
-- SciPY:
+- SciPY: SciPY is needed by TACO's Python API.
 
-  SciPY is needed by TACO's Python API. Install it via `pip`:
+- exrex: C2TACO uses the ![exrex library](https://github.com/asciimoo/exrex) to represent the grammar using regular expressions.
 
-  ```
-  $ pip install scipy
-  ```
+- clang/libclang: C2TACO uses the clang Python module to perform static analyses on programs.
 
-- exrex:
-
-  C2TACO uses the exrex library to represent the grammar using regular expressions.
-
-  * Install ![exrex library](https://github.com/asciimoo/exrex) via `pip`:
+  All these dependencies are listed in the `requirements.txt` file. Install it via `pip`:
 
   ```
-  $ pip install exrex
-  ````
-- clang:
-
-  C2TACO uses the clang Python module to perform static analyses on programs.
-
-  * Install clang python bindings via `pip` (tested against version 14):
-
-  ```
-  $ pip install clang==14
+  $ pip install -r requirements.txt
   ```
     
 # Usage
@@ -178,4 +163,28 @@ void computeDeviceKernel0(taco_tensor_t * __restrict__ a, taco_tensor_t * __rest
     }
   }
 }
+```
+# How to Cite
+
+If you use C2TACO, please refer the reference [paper](https://dl.acm.org/doi/10.1145/3624007.3624053):
+
+```bibtex
+@inproceedings{10.1145/3624007.3624053,
+author = {Magalh\~{a}es, Jos\'{e} Wesley de Souza and Woodruff, Jackson and Polgreen, Elizabeth and O'Boyle, Michael F. P.},
+title = {C2TACO: Lifting Tensor Code to TACO},
+year = {2023},
+isbn = {9798400704062},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3624007.3624053},
+doi = {10.1145/3624007.3624053},
+abstract = {Domain-specific languages (DSLs) promise a significant performance and portability advantage over traditional languages. DSLs are designed to be high-level and platform-independent, allowing an optimizing compiler significant leeway when targeting a particular device. Such languages are particularly popular with emerging tensor algebra workloads. However, DSLs present their own challenge: they require programmers to learn new programming languages and put in significant effort to migrate legacy code. We present C2TACO, a synthesis tool for synthesizing TACO, a well-known tensor DSL, from C code. We develop a smart, enumerative synthesizer that uses automatically generated IO examples and source-code analysis to efficiently generate code. C2TACO is able to synthesize 95\% bench marks from a tensor benchmark suite, out-performing an alternative neural machine translation technique, and demonstrates substantially higher levels of accuracy when evaluated against two state-of-the-art existing schemes, TF-Coder and ChatGPT. Our synthesized TACO programs are, by design, portable achieving significant performance improvement when evaluated on a multi-core and GPU platform.},
+booktitle = {Proceedings of the 22nd ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences},
+pages = {42–56},
+numpages = {15},
+keywords = {Program Lifting, TACO, Synthesis, Tensor Algebra},
+location = {Cascais, Portugal},
+series = {GPCE 2023}
+}
+
 ```
