@@ -55,7 +55,7 @@ Given an C code that performs some C tensor manipulations, C2TACO will look for 
 $ python3 c2taco.py <path-to-c-program> <path-to-IO-samples> <path-to-clang-executable>
 ```
 
-For example, to run C2TACO on the ![`add_array`](https://github.com/JWesleySM/c2taco/benchmarks/artificial/add_array.c) program, run:
+For example, to run C2TACO on the ![`add_array`](https://github.com/JWesleySM/c2taco/blob/main/benchmarks/artificial/add_array.c) program, run:
 
 ```
 $ python3 c2taco.py ./benchmarks/artificial/add_array.c ./benchmarks/artificial/add_array_io.json <path-to-clang-executable>
