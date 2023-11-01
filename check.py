@@ -224,24 +224,16 @@ def check_as_pytaco(candidate, io, substitution):
   return taco_output 
 
 
-def check_substitution(substitution, c, io_set, debug = False):
+def check_substitution(substitution, c, io_set):
   """Check if a candidate is the solution using a specific substution."""
-  if debug:
-    print(f'Checking substitution: {substitution}')
   try:
     # We first check agains the first sample in the IO set
     taco_output = check_as_pytaco(c, io_set[0], substitution)
-    if debug:
-      print(f'TACO output: {taco_output[:10]}')
-      print(f'Expected output: {io_set[0].output[1][:10]}')
     if taco_output == io_set[0].output[1]:
       # A candidate is correct if it returns the correct output for all
       # the elements in the IO set.
       for io in io_set[1:]:
         taco_output = check_as_pytaco(c, io, substitution)
-        if debug:
-          print(f'TACO output: {taco_output[:10]}')
-          print(f'Expected output: {io_set[0].output[1][:10]}')
         if taco_output != io.output[1]:
           return False
         
@@ -252,7 +244,7 @@ def check_substitution(substitution, c, io_set, debug = False):
     raise e
   
 
-def check(candidate, io_set, debug = False):
+def check(candidate, io_set):
   """Check if a candidate is the solution for the synthesis problem."""
   # We can discard candidates based only in the shape of the IO.
   # Since all IO samples have the same shape, we need to check only one item 
@@ -269,7 +261,7 @@ def check(candidate, io_set, debug = False):
   # correct answer.
   for substitution in input_substitutions:
     try:
-      if check_substitution(substitution, candidate, io_set, debug):
+      if check_substitution(substitution, candidate, io_set):
         return CheckingReturnCode.SUCCESS
     except RuntimeError:
       n_runtime_errors += 1

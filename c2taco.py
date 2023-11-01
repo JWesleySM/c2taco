@@ -33,8 +33,8 @@ def run_code_analysis(source_program, clang, analysis):
   except subprocess.CalledProcessError as e:
     print('Error while running plugin: ', e)
     # The length of the program is mandatory for the synthesizer, therefore, in case
-    # the Program Length analysis fail, we return a default value of 4
-    return 4 if analysis == 'ProgramLength' else []
+    # the Program Length analysis fail, we return a default value of 0.
+    return 0 if analysis == 'ProgramLength' else []
 
 
 def c2taco():
