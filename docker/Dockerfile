@@ -21,6 +21,7 @@ RUN pip3 install libclang==14.0.6
 ############################ LLVM ############################
 RUN cd $HOME && wget https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.0/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz \
     && tar -xf clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz \
+    && mv clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04 llvm \
     && rm clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
 
 
