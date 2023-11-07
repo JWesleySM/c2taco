@@ -28,7 +28,7 @@ Once the image is built, that can be executed with the command:
 $ docker run -ti -v /root/c2taco c2taco-docker
 ```
 
-This will run C2TACO Docker image and leave you inside a container with all C2TACO completely configured.
+This will run C2TACO Docker image and leave you inside a container with all C2TACO completely configured. Notice that, by default, C2TACO Dockerfile downloads LLVM for x86. This can be changed in case you want to run it on other architectures.
 
 # Usage
 

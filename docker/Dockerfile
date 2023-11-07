@@ -33,7 +33,7 @@ RUN echo "export PYTHONPATH=${HOME}/taco/build/lib:$PYTHONPATH" >> ~/.bashrc
 
 ############################ Clone C2TACO ############################
 RUN cd $HOME && git clone https://github.com/JWesleySM/c2taco
-RUN cd ${HOME}/c2taco && ./build_code_analyses.sh ${HOME}/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04
+RUN cd ${HOME}/c2taco && ./build_code_analyses.sh ${HOME}/llvm
 
 
 WORKDIR /root/c2taco
