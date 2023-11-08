@@ -3,7 +3,7 @@ import os
 import subprocess
 import time
 
-from synthesizer import synthesize
+from synthesis.synthesizer import synthesize
 
 def run_code_analysis(source_program, clang, analysis):
   if analysis == 'ProgramLength':

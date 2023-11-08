@@ -1,6 +1,6 @@
 import itertools
 import re
-from check import get_tensor_order
+from synthesis.check import get_tensor_order
 
 class Candidate():
   """This class is used to represent a candidate TACO program during synthesis.

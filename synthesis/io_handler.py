@@ -1,7 +1,6 @@
 from clang.cindex import Index, CursorKind
 import itertools
 import json
-import os
 from typing import Dict, List, NamedTuple
 
 LOOP_TYPES = [CursorKind.FOR_STMT, CursorKind.WHILE_STMT, CursorKind.DO_STMT]

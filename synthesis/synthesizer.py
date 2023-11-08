@@ -3,9 +3,9 @@ import re
 import os
 import time
 
-from candidate import Candidate
-from io_handler import IOHandler
-from check import check, get_tensor_order, CheckingReturnCode
+from synthesis.candidate import Candidate
+from synthesis.io_handler import IOHandler
+from synthesis.check import check, get_tensor_order, CheckingReturnCode
 
 # The list of binary operators supported in TACO. It is used in Enumerative Template Synthesis (ETS) or
 # in case the list of predicted operators is empty.
@@ -88,7 +88,7 @@ def is_non_supported_program(lhs, prog, op, t):
   """
   if op == '/' and get_tensor_order(t) > 0:
     for elem in prog.split():
-      if(re.match('^-?[b-e]|Cons', elem)):
+      if(re.match('^-?[b-e]', elem)):
         if(get_tensor_indexing(elem) != get_tensor_indexing(t)):
           return True
   

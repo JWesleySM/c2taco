@@ -1,4 +1,0 @@
-scipy>=1.10.0
-exrex==0.10.5
-clang==14.0
-libclang==14.0.6
