@@ -6,5 +6,4 @@ int mag_array(int *a, int n)
         sum += a[i]*a[i];   
     }
     return sum;
-    //return sqrt(sum);
-}
+} 
