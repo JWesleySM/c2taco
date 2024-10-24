@@ -31,7 +31,7 @@ In the profile above, array `a` is specified as having 20 elements. Variable `n`
 To generate an IO file, simply run the `io_gen.py` file as shown below.
 
 ```
-$ python3 io_gen.py <path-to-c-program> -vp <path-to-value-profile-file> [-ov output_variable_name] -n numer_of_inputs
+$ python3 io_gen.py -b <path-to-c-program> -vp <path-to-value-profile-file> [-ov output_variable_name] -n numer_of_inputs
 ```
 
 The script will first parse the input program to get information about its signature. Given said information and the value profile data, a driver will be created. Such driver contains a `main` routine that initialize the required variables, call the original program and prints input and output values. The driver is compiled together with the original program plus the `io_gen.c` file, which contains auxiliary methods. The IO generator scripts then executes the generated binary and save its output to a temporary file which is parsed and a final JSON is produced contaning the IO set structured in the format required by C2TACO.

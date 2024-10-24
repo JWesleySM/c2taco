@@ -151,10 +151,10 @@ void computeDeviceKernel0(taco_tensor_t * __restrict__ a, taco_tensor_t * __rest
 }
 ```
 
-If you want to reproduce this example, run:
+If you want to reproduce this example from inside the container, run:
 
 ```
-$ python3 c2taco.py ./benchmarks/real/utdsp/mult.c ./benchmarks/real/utdsp/mult_io.json <path-to-clang-executable>
+$ python3 c2taco.py ./benchmarks/real/utdsp/mult.c ./benchmarks/real/utdsp/mult_io.json ../llvm/bin/clang
 ```
 
 
