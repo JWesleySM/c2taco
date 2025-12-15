@@ -1,0 +1,10 @@
+Log for /home/jw/phd/lifting/git/lifting-benchmarks/real/blas/dot.c
+Solution: a = b(i) * c(i)
+Search space size: 64 candidates
+Candidates tried: 5
+Candidates discarded by type checking: 0
+Candidates error: 0
+Time for parsing IO: 0.02 seconds
+Time for enumerate candidates: 0.00 seconds
+Time for checking candidates: 1.79 seconds
+Total synthesis time: 1.81 seconds
